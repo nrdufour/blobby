@@ -1,0 +1,12 @@
+{application, blobby,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { blobby_app, []}},
+  {env, [{ip, any}, {port, 8080}]}
+ ]}.
