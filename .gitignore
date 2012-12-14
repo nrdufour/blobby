@@ -1,2 +1,4 @@
 deps
+ebin/*
+apps/*/ebin/*
 rel/blobby
