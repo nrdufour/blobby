@@ -25,7 +25,8 @@ start_link() ->
 
 init([]) ->
     BlobManager = ?CHILD(blobby_manager, worker),
+    BlobDumbStorage = ?CHILD(blobby_dumb_storage, worker),
 
-    Children = [BlobManager],
+    Children = [BlobManager, BlobDumbStorage],
     RestartStrategy = {one_for_one, 1, 60},
     {ok, { RestartStrategy, Children} }.
