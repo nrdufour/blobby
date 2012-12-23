@@ -4,12 +4,15 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--export([start_link/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, list_blobs/0]).
+-export([start_link/0, stop/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, list_blobs/0]).
 
 %%
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+stop() ->
+	gen_server:call(?MODULE, {stop}).
 
 init_storage(Options) ->
 	gen_server:call(?MODULE, {init, Options}).
@@ -31,6 +34,8 @@ list_blobs() ->
 init(Args) ->
 	{ok, Args}.
 
+handle_call({stop}, _From, State) ->
+	{stop, normal, ok, State};
 handle_call({init, Options}, _From, State) ->
 	io:format("Initialising the dumb storage with options: ~p~n", [Options]),
 	{reply, ok, State};
@@ -39,7 +44,7 @@ handle_call({get, Id}, _From, State) ->
 	{reply, ok, State};
 handle_call({store, Id, Func}, _From, State) ->
 	io:format("Storing the blob with id: ~p and func: ~p~n", [Id, Func]),
-	{reply, ok, State};
+	{reply, {ok, Id}, State};
 handle_call({remove, Id}, _From, State) ->
 	io:format("Removing the blob with id: ~p~n", [Id]),
 	{reply, ok, State}.
