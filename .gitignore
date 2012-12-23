@@ -2,3 +2,4 @@ deps
 ebin/*
 apps/*/ebin/*
 rel/blobby
+.eunit
