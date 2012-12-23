@@ -20,8 +20,10 @@ init_storage(Options) ->
 get_blob(Id) ->
 	gen_server:call(?MODULE, {get, Id}).
 
+store_blob(Id, Bin) when is_binary(Bin) ->
+	gen_server:call(?MODULE, {store_binary, Id, Bin});
 store_blob(Id, Func) ->
-	gen_server:call(?MODULE, {store, Id, Func}).
+	gen_server:call(?MODULE, {store_stream, Id, Func}).
 
 remove_blob(Id) ->
 	gen_server:call(?MODULE, {remove, Id}).
@@ -32,6 +34,16 @@ list_blobs() ->
 %%
 
 init(Args) ->
+	case file:make_dir("/tmp/blobby_dumb_storage") of
+		ok ->
+			ok;
+		{error, eexist} ->
+			%% TODO add here something to scan the directory
+			ok;
+		Error ->
+			throw({error, cant_init_dumb_storage, Error})
+	end,
+
 	{ok, Args}.
 
 handle_call({stop}, _From, State) ->
@@ -42,7 +54,10 @@ handle_call({init, Options}, _From, State) ->
 handle_call({get, Id}, _From, State) ->
 	io:format("getting the blob with id: ~p~n", [Id]),
 	{reply, ok, State};
-handle_call({store, Id, Func}, _From, State) ->
+handle_call({store_binary, Id, Bin}, _From, State) ->
+	io:format("Storing the blob with id: ~p and Bin: ~p~n", [Id, Bin]),
+	{reply, {ok, Id}, State};
+handle_call({store_stream, Id, Func}, _From, State) ->
 	io:format("Storing the blob with id: ~p and func: ~p~n", [Id, Func]),
 	{reply, {ok, Id}, State};
 handle_call({remove, Id}, _From, State) ->
