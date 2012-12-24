@@ -6,7 +6,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--export([start_link/0, stop/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, list_blobs/0]).
+-export([start_link/0, stop/0, init_storage/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, list_blobs/0]).
 
 %%
 
@@ -15,6 +15,9 @@ start_link() ->
 
 stop() ->
 	gen_server:call(?MODULE, {stop}).
+
+init_storage() ->
+	init_storage([]).
 
 init_storage(Options) ->
 	gen_server:call(?MODULE, {init, Options}).
@@ -52,7 +55,8 @@ handle_call({stop}, _From, State) ->
 	{stop, normal, ok, State};
 handle_call({init, Options}, _From, State) ->
 	io:format("Initialising the dumb storage with options: ~p~n", [Options]),
-	{reply, ok, State};
+	Reply = do_init_storage(Options),
+	{reply, Reply, State};
 handle_call({get, Id}, _From, State) ->
 	io:format("getting the blob with id: ~p~n", [Id]),
 	{reply, ok, State};
@@ -80,6 +84,28 @@ code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
 %%
+
+do_init_storage(_Options) ->
+	% first remove any blob
+	filelib:fold_files(
+		?REPO_HOME,
+		".+",
+		true,
+		fun(Filename, _Acc) ->
+			file:delete(Filename)
+		end,
+		[]),
+	
+	% then remove their directories
+	Dirs = filelib:wildcard("*", ?REPO_HOME),
+	lists:foldl(
+		fun(Dir, _Acc) ->
+			file:del_dir(Dir)
+		end,
+		[],
+		Dirs
+	),
+	ok.
 
 content_directory(Id) ->
     string:sub_string(Id, 1,2).

@@ -17,6 +17,7 @@ basic_files_test_() ->
 
 start() ->
 	{ok, Pid} = blobby_dumb_storage:start_link(),
+	blobby_dumb_storage:init_storage(),
 	Pid.
 
 stop(_) ->
