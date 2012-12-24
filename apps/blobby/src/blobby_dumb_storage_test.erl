@@ -28,7 +28,7 @@ stop(_) ->
 
 store_a_file(_) ->
 	Content = <<"Hello World!">>,
-	Id = 123,
+	Id = "123",
 	
 	Res = blobby_dumb_storage:store_blob(Id, Content),
 	[?_assert({ok, Id} =:= Res)].

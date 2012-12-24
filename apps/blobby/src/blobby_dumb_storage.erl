@@ -2,6 +2,8 @@
 
 -behaviour(gen_server).
 
+-define(REPO_HOME, "/tmp/blobby_dumb_storage").
+
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -export([start_link/0, stop/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, list_blobs/0]).
@@ -34,7 +36,7 @@ list_blobs() ->
 %%
 
 init(Args) ->
-	case file:make_dir("/tmp/blobby_dumb_storage") of
+	case file:make_dir(?REPO_HOME) of
 		ok ->
 			ok;
 		{error, eexist} ->
@@ -56,7 +58,8 @@ handle_call({get, Id}, _From, State) ->
 	{reply, ok, State};
 handle_call({store_binary, Id, Bin}, _From, State) ->
 	io:format("Storing the blob with id: ~p and Bin: ~p~n", [Id, Bin]),
-	{reply, {ok, Id}, State};
+	Reply = store_binary_content(Id, Bin),
+	{reply, Reply, State};
 handle_call({store_stream, Id, Func}, _From, State) ->
 	io:format("Storing the blob with id: ~p and func: ~p~n", [Id, Func]),
 	{reply, {ok, Id}, State};
@@ -75,3 +78,32 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+%%
+
+content_directory(Id) ->
+    string:sub_string(Id, 1,2).
+
+content_filename(Id) ->
+    string:sub_string(Id, 3).
+
+content_location(Id) ->
+    content_directory(Id) ++ "/" ++ content_filename(Id).
+    
+content_full_location(Id) ->
+	?REPO_HOME ++ "/" ++ content_location(Id).
+
+maybe_create_directory(Path) ->
+	FullPath = ?REPO_HOME ++ "/" ++ Path,
+	file:make_dir(FullPath).
+
+store_binary_content(Id, Bin) ->
+	maybe_create_directory(content_directory(Id)),
+	
+	Filename = content_full_location(Id),
+	case file:write_file(Filename, Bin) of
+		ok ->
+			{ok, Id};
+		{error, Reason} ->
+			{error, Reason}
+	end.
