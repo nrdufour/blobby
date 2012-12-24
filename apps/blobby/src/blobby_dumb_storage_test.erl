@@ -9,7 +9,7 @@
 
 basic_files_test_() ->
 	{"Testing with simple files first.",
-	 ?setup(fun store_a_file/1)}.
+	 ?setup(fun store_and_retrieve_a_file/1)}.
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%% SETUP FUNCTIONS %%%
@@ -27,12 +27,16 @@ stop(_) ->
 %%% ACTUAL TESTS %%%
 %%%%%%%%%%%%%%%%%%%%
 
-store_a_file(_) ->
+store_and_retrieve_a_file(_) ->
 	Content = <<"Hello World!">>,
 	ContentHash = blobby_util:content_hash(Content),
 	
 	Res = blobby_dumb_storage:store_blob(ContentHash, Content),
-	[?_assert({ok, ContentHash} =:= Res)].
+	
+	Res2 = blobby_dumb_storage:get_blob(ContentHash),
+	
+	[?_assert({ok, ContentHash} =:= Res),
+	 ?_assert({ok, Content} =:= Res2)].
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%% HELPER FUNCTIONS %%%

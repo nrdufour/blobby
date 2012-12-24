@@ -3,6 +3,7 @@
 -behaviour(gen_server).
 
 -define(REPO_HOME, "/tmp/blobby_dumb_storage").
+-define(CHUNK_SIZE, 1024).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -59,7 +60,8 @@ handle_call({init, Options}, _From, State) ->
 	{reply, Reply, State};
 handle_call({get, Id}, _From, State) ->
 	io:format("getting the blob with id: ~p~n", [Id]),
-	{reply, ok, State};
+	Reply = get_blob_directly(Id),
+	{reply, Reply, State};
 handle_call({store_binary, Id, Bin}, _From, State) ->
 	io:format("Storing the blob with id: ~p and Bin: ~p~n", [Id, Bin]),
 	Reply = store_binary_content(Id, Bin),
@@ -133,3 +135,8 @@ store_binary_content(Id, Bin) ->
 		{error, Reason} ->
 			{error, Reason}
 	end.
+
+get_blob_directly(Id) ->
+	Filename = content_full_location(Id),
+	{ok, Bin} = file:read_file(Filename),
+	{ok, Bin}.
