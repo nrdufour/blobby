@@ -28,10 +28,10 @@ stop(_) ->
 
 store_a_file(_) ->
 	Content = <<"Hello World!">>,
-	Id = "123",
+	ContentHash = blobby_util:content_hash(Content),
 	
-	Res = blobby_dumb_storage:store_blob(Id, Content),
-	[?_assert({ok, Id} =:= Res)].
+	Res = blobby_dumb_storage:store_blob(ContentHash, Content),
+	[?_assert({ok, ContentHash} =:= Res)].
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%% HELPER FUNCTIONS %%%
