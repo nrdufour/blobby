@@ -8,8 +8,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 basic_files_test_() ->
-	{"Testing with simple files first.",
-	 ?setup(fun store_and_retrieve_a_file/1)}.
+	[{"Testing with simple files first.",
+	 ?setup(fun store_and_retrieve_a_file/1)},
+	 {"Listing a bunch of blobs",
+	 ?setup(fun listing_blobs/1)}].
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %%% SETUP FUNCTIONS %%%
@@ -37,6 +39,19 @@ store_and_retrieve_a_file(_) ->
 	
 	[?_assert({ok, ContentHash} =:= Res),
 	 ?_assert({ok, Content} =:= Res2)].
+
+listing_blobs(_) ->
+	blobby_dumb_storage:store_blob("123", <<"Hello World!">>),
+	blobby_dumb_storage:store_blob("456", <<"Hello Foo!">>),
+	blobby_dumb_storage:store_blob("789", <<"Hello Bar!">>),
+	
+	ListingFunc = fun(X, Acc) ->
+		[X | Acc]
+	end,
+	
+	Res = blobby_dumb_storage:fold_blobs(ListingFunc, []),
+	
+	[?_assert(Res =:= ["123", "456", "789"])].
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%% HELPER FUNCTIONS %%%

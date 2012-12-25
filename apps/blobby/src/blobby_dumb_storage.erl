@@ -7,7 +7,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--export([start_link/0, stop/0, init_storage/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, fold_blobs/1]).
+-export([start_link/0, stop/0, init_storage/0, init_storage/1, get_blob/1, store_blob/2, remove_blob/1, fold_blobs/2]).
 
 %%
 
@@ -34,8 +34,8 @@ store_blob(Id, Func) ->
 remove_blob(Id) ->
 	gen_server:call(?MODULE, {remove, Id}).
 
-fold_blobs(Func) ->
-	gen_server:call(?MODULE, {fold, Func}).
+fold_blobs(Func, InitState) ->
+	gen_server:call(?MODULE, {fold, Func, InitState}).
 
 %%
 
@@ -72,8 +72,8 @@ handle_call({store_stream, Id, Func}, _From, State) ->
 handle_call({remove, Id}, _From, State) ->
 	io:format("Removing the blob with id: ~p~n", [Id]),
 	{reply, ok, State};
-handle_call({fold, Func}, _From, State) ->
-	Reply = fold_all_blobs(Func),
+handle_call({fold, Func, InitState}, _From, State) ->
+	Reply = fold_all_blobs(Func, InitState),
 	{reply, Reply, State}.
 
 handle_cast(_Request, State) ->
@@ -97,7 +97,10 @@ do_init_storage(_Options) ->
 		".+",
 		true,
 		fun(Filename, _Acc) ->
-			file:delete(Filename)
+			case file:delete(Filename) of
+				ok -> ok;
+				{error, Reason} -> io:format("OOPS file ~p: ~p~n", [Filename, Reason])
+			end
 		end,
 		[]),
 	
@@ -105,7 +108,10 @@ do_init_storage(_Options) ->
 	Dirs = filelib:wildcard("*", ?REPO_HOME),
 	lists:foldl(
 		fun(Dir, _Acc) ->
-			file:del_dir(Dir)
+			case file:del_dir(?REPO_HOME ++ "/" ++ Dir) of
+				ok -> ok;
+				{error, Reason} -> io:format("OOPS dir ~p: ~p~n", [Dir, Reason])
+			end
 		end,
 		[],
 		Dirs
@@ -144,11 +150,11 @@ get_blob_directly(Id) ->
 	{ok, Bin} = file:read_file(Filename),
 	{ok, Bin}.
 
-fold_all_blobs(Func) ->
+fold_all_blobs(Func, InitState) ->
 	ProcessFilename = fun(Filename, Acc) ->
 		Elements = string:tokens(Filename, "/"),
 		Length = length(Elements),
-		Id = lists:nth(Length - 2, Elements) ++ lists:nth(Length - 1, Elements),
+		Id = lists:nth(Length - 1, Elements) ++ lists:nth(Length, Elements),
 		Func(Id, Acc)
 	end,
 
@@ -156,5 +162,6 @@ fold_all_blobs(Func) ->
 		?REPO_HOME,
 		".+",
 		true,
-		ProcessFilename
+		ProcessFilename,
+		InitState
 	).
